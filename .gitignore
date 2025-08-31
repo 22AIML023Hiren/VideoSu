@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+TextualSummarizationOfVideosInIndicLanguage-backend/venv/
+
+# Environment variables
+.env
+
+# Generated media & downloads
+downloads/
+audio_files/
+file/
+*.wav
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Hugging Face model caches and temporary folders
+hf_cache/
+hf_models/

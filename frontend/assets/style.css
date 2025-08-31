@@ -1,0 +1,80 @@
+/* Main Container */
+.stApp {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%) !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header Styles */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.logo {
+    height: 80px;
+    margin-right: 20px;
+}
+
+/* Card Styles */
+.card {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-radius: 15px !important;
+    padding: 2rem;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1) !important;
+    margin-bottom: 2rem;
+    border: none !important;
+}
+
+/* Button Styles */
+.stButton>button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 12px 24px !important;
+    font-weight: 600 !important;
+    transition: all 0.3s ease !important;
+}
+
+.stButton>button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Summary Box */
+.summary-box {
+    background: #f8f9fa;
+    border-left: 4px solid #667eea;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+/* Progress Bar */
+.stProgress > div > div > div {
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+/* Video Player */
+video {
+    border-radius: 12px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+    margin-bottom: 1.5rem !important;
+}
+/* Add to style.css for better mobile view */
+@media (max-width: 768px) {
+    .card {
+        padding: 1rem !important;
+    }
+    .stButton>button {
+        padding: 10px 16px !important;
+    }
+}
