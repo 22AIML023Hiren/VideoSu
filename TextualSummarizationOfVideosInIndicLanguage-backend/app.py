@@ -7,6 +7,9 @@ import os
 from pathlib import Path
 import logging
 import yt_dlp   # <-- NEW for fetching metadata safely
+import random
+import time
+
 # Universal device detection - works for both CPU and GPU
 def get_device():
     if torch.cuda.is_available():
@@ -16,10 +19,6 @@ def get_device():
         device = "cpu"
         print("🔧 Using CPU mode - GPU not available")
     return device
-import random
-import time
-
-
 
 DEVICE = get_device()
 
@@ -167,7 +166,8 @@ def summarize():
             except Exception as e:
                 return jsonify({"error": f"YouTube download failed: {str(e)}", "status": "error"}), 400
         else:
-            audio_dir = Path("audio_files"); audio_dir.mkdir(exist_ok=True)
+            audio_dir = Path("audio_files")
+            audio_dir.mkdir(exist_ok=True)
             audio_path = audio_dir / "audio.wav"
             uploaded_file.save(audio_path)
             video_title = "Uploaded File"
