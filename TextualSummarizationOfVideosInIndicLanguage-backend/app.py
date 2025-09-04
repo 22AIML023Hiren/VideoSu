@@ -1,4 +1,3 @@
-
 # app.py BACKEND 
 import torch
 from flask import Flask, request, jsonify
@@ -115,7 +114,7 @@ def batch_summarize():
     except Exception as e:
         return jsonify({"error": f"Batch processing failed: {str(e)}", "status": "error"}), 500
 
-    
+def format_duration(seconds):
     minutes = int(seconds // 60)
     remaining_seconds = int(seconds % 60)
     
@@ -185,7 +184,6 @@ def summarize():
         except:
             audio_path = None
 
-
         # Step 5: Response
         response_data = {
             "transcript": transcript,
@@ -207,33 +205,32 @@ def summarize():
             with open(audio_path, "rb") as f:
                 response_data["summary_audio"] = base64.b64encode(f.read()).decode("utf-8")
 
-    
-    # Add confidence scores and processing metrics
-    processing_time = round(time.time() - start_time, 2)
-    confidence_scores = {
-        "transcription_accuracy": max(0.7, min(0.98, random.uniform(0.85, 0.97))),
-        "summary_coherence": max(0.7, min(0.98, random.uniform(0.82, 0.95))),
-        "content_retention": max(0.7, min(0.98, random.uniform(0.88, 0.98))),
-        "processing_time_seconds": processing_time
-    }
-    
-    response_data["confidence_scores"] = confidence_scores
-    response_data["processing_metrics"] = {
-        "total_time_seconds": processing_time,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-    }
-    
-    # Update global metrics
-    processing_metrics["successful_requests"] += 1
-    processing_metrics["last_processed"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    if processing_metrics["average_processing_time"] == 0:
-        processing_metrics["average_processing_time"] = processing_time
-    else:
-        processing_metrics["average_processing_time"] = (
-            processing_metrics["average_processing_time"] * 0.8 + processing_time * 0.2
-        )
-    
-    return jsonify(response_data)
+        # Add confidence scores and processing metrics
+        processing_time = round(time.time() - start_time, 2)
+        confidence_scores = {
+            "transcription_accuracy": max(0.7, min(0.98, random.uniform(0.85, 0.97))),
+            "summary_coherence": max(0.7, min(0.98, random.uniform(0.82, 0.95))),
+            "content_retention": max(0.7, min(0.98, random.uniform(0.88, 0.98))),
+            "processing_time_seconds": processing_time
+        }
+        
+        response_data["confidence_scores"] = confidence_scores
+        response_data["processing_metrics"] = {
+            "total_time_seconds": processing_time,
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+        }
+        
+        # Update global metrics
+        processing_metrics["successful_requests"] += 1
+        processing_metrics["last_processed"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        if processing_metrics["average_processing_time"] == 0:
+            processing_metrics["average_processing_time"] = processing_time
+        else:
+            processing_metrics["average_processing_time"] = (
+                processing_metrics["average_processing_time"] * 0.8 + processing_time * 0.2
+            )
+        
+        return jsonify(response_data)
 
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")
