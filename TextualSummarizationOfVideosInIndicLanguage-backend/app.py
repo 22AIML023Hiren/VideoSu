@@ -107,17 +107,14 @@ def batch_summarize():
                 }
             }
             results.append(result)
-        
         return jsonify({
             "status": "success",
             "processed_count": len(results),
             "results": results
-    })
+        })
+    except Exception as e:
+        return jsonify({"error": f"Batch processing failed: {str(e)}", "status": "error"}), 500
 
-def format_duration(seconds):
-    """Convert duration in seconds to a human-readable format (minutes and seconds)"""
-    if seconds is None:
-        return "N/A"
     
     minutes = int(seconds // 60)
     remaining_seconds = int(seconds % 60)
