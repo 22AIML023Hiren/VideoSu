@@ -84,6 +84,7 @@ def download_youtube_audio(url: str) -> str:
         download_dir = Path("downloads")
         download_dir.mkdir(exist_ok=True)
 
+        # ENHANCED: Better yt-dlp options to avoid bot detection
         ydl_opts = {
             "format": "bestaudio/best",
             "outtmpl": str(download_dir / "%(id)s.%(ext)s"),
@@ -94,9 +95,28 @@ def download_youtube_audio(url: str) -> str:
                     "preferredquality": "192",
                 }
             ],
-            "quiet": True,
+            "quiet": False,
             "noplaylist": True,
-            "extract_flat": False,  # Ensure we get full video info
+            "extract_flat": False,
+            "no_check_certificate": True,
+            "ignoreerrors": False,
+            "no_warnings": False,
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.5",
+                "Accept-Encoding": "gzip, deflate",
+                "DNT": "1",
+                "Connection": "keep-alive",
+            },
+            "extractor_args": {
+                "youtube": {
+                    "skip": ["dash", "hls"],
+                    "player_client": ["android", "web"],
+                }
+            },
+            "socket_timeout": 30,
+            "retries": 5,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -117,7 +137,7 @@ def download_youtube_audio(url: str) -> str:
             with open(info_path, "w", encoding="utf-8") as f:
                 json.dump(video_info, f, ensure_ascii=False, indent=2)
 
-        timeout = 20
+        timeout = 30
         while timeout > 0 and not audio_path.exists():
             time.sleep(1)
             timeout -= 1
@@ -136,7 +156,15 @@ def download_youtube_audio(url: str) -> str:
         return str(final_audio_path)
 
     except Exception as e:
-        raise Exception(f"YouTube download failed: {str(e)}")
+        error_msg = str(e)
+        if "Sign in to confirm you're not a bot" in error_msg:
+            raise Exception("YouTube bot detection triggered. Please try again in a few minutes or use a different video.")
+        elif "Private video" in error_msg:
+            raise Exception("This is a private video and cannot be downloaded.")
+        elif "Video unavailable" in error_msg:
+            raise Exception("Video is unavailable or has been removed.")
+        else:
+            raise Exception(f"YouTube download failed: {error_msg}")
 
 def get_youtube_description(video_url: str) -> str:
     """Extract YouTube video description"""
@@ -394,7 +422,7 @@ def summarize_pipeline(transcript: str, target_language: str = "en", video_url: 
     # 1) Normalize to English for best summarization quality
     if src_lang != "en":
         print("🔁 Translating transcript → English for summarization...")
-        txt = translate_text(txt, src_lang, "en")
+        txt = translate_text(ttxt, src_lang, "en")
         print(f"✅ Translated transcript length: {len(txt)} characters")
 
     # 2) Summarize in English with better chunking
