@@ -17,10 +17,8 @@ def get_device():
         device = "cpu"
         print("🔧 Using CPU mode - GPU not available")
     return device
-import random
-import time
 
-
+DEVICE = get_device()
 
 DEVICE = get_device()
 
@@ -40,21 +38,6 @@ from main import (
     save_summary_as_audio,
 )
 
-# Enhanced model support
-SUPPORTED_MODELS = {
-    "summarization": ["facebook/bart-large-cnn", "google/pegasus-xsum"],
-    "transcription": ["openai/whisper-large", "facebook/wav2vec2-large"]
-}
-
-# Global metrics storage
-processing_metrics = {
-    "total_requests": 0,
-    "successful_requests": 0,
-    "average_processing_time": 0,
-    "last_processed": None
-}
-app_start_time = time.time()
-
 app = Flask(__name__)
 CORS(app)
 
@@ -65,53 +48,6 @@ def health_check():
         "status": "healthy",
         "message": "Backend is running",
         "models_loaded": True
-    })
-
-@app.route("/api/models", methods=["GET"])
-def get_models():
-    return jsonify({
-        "status": "success",
-        "models": SUPPORTED_MODELS,
-        "current_model": {
-            "summarization": "facebook/bart-large-cnn",
-            "transcription": "openai/whisper-large"
-        }
-    })
-
-@app.route("/api/metrics", methods=["GET"])
-def get_performance_metrics():
-    return jsonify({
-        "status": "success",
-        "metrics": processing_metrics,
-        "uptime_hours": round((time.time() - app_start_time) / 3600, 2)
-    })
-
-@app.route("/api/batch-summarize", methods=["POST"])
-def batch_summarize():
-    try:
-        batch_data = request.get_json()
-        videos = batch_data.get("videos", [])
-        
-        if not videos:
-            return jsonify({"error": "No videos provided", "status": "error"}), 400
-        
-        results = []
-        for video in videos:
-            result = {
-                "video_url": video.get("url", ""),
-                "status": "processed",
-                "summary": "Sample summary for batch processing",
-                "confidence_scores": {
-                    "transcription_accuracy": round(random.uniform(0.85, 0.95), 2),
-                    "summary_quality": round(random.uniform(0.8, 0.93), 2)
-                }
-            }
-            results.append(result)
-        
-        return jsonify({
-            "status": "success",
-            "processed_count": len(results),
-            "results": results
     })
 
 def format_duration(seconds):
@@ -145,9 +81,6 @@ def get_youtube_metadata(video_url: str):
 
 @app.route("/summarize", methods=["POST"])
 def summarize():
-    global processing_metrics
-    processing_metrics["total_requests"] += 1
-    start_time = time.time()
     try:
         video_url = request.form.get("url") or request.form.get("video_url")
         # Simple check for direct video URLs
@@ -210,33 +143,7 @@ def summarize():
             with open(audio_path, "rb") as f:
                 response_data["summary_audio"] = base64.b64encode(f.read()).decode("utf-8")
 
-    
-    # Add confidence scores and processing metrics
-    processing_time = round(time.time() - start_time, 2)
-    confidence_scores = {
-        "transcription_accuracy": max(0.7, min(0.98, random.uniform(0.85, 0.97))),
-        "summary_coherence": max(0.7, min(0.98, random.uniform(0.82, 0.95))),
-        "content_retention": max(0.7, min(0.98, random.uniform(0.88, 0.98))),
-        "processing_time_seconds": processing_time
-    }
-    
-    response_data["confidence_scores"] = confidence_scores
-    response_data["processing_metrics"] = {
-        "total_time_seconds": processing_time,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-    }
-    
-    # Update global metrics
-    processing_metrics["successful_requests"] += 1
-    processing_metrics["last_processed"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    if processing_metrics["average_processing_time"] == 0:
-        processing_metrics["average_processing_time"] = processing_time
-    else:
-        processing_metrics["average_processing_time"] = (
-            processing_metrics["average_processing_time"] * 0.8 + processing_time * 0.2
-        )
-    
-    return jsonify(response_data)
+        return jsonify(response_data)
 
     except Exception as e:
         logger.error(f"❌ Unexpected error: {e}")

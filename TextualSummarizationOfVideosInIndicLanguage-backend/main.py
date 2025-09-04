@@ -15,7 +15,7 @@ from deep_translator import GoogleTranslator
 
 import torch
 # New Import: Faster Whisper
-from faster_whisper import WhisperModel
+import whisper
 
 # ---------- CONFIG ----------
 # Device selection: GPU if available otherwise CPU
@@ -25,24 +25,14 @@ print(f"🔁 Loading models... Using {DEVICE}")
 
 # Models (small / fast defaults). You can override via env vars.
 # We no longer need ASR_MODEL_ID for this new approach
-SUMMARIZER_MODEL_ID = os.getenv("SUMMARIZER_MODEL_ID", "sshleifer/distilbart-cnn-12-6")
+SUMMARIZER_MODEL_ID = os.getenv("SUMMARIZER_MODEL_ID", "facebook/bart-large-cnn")
 
 # Optional: local cache folder inside project to avoid re-downloads
 LOCAL_HF_MODELS = Path(os.getenv("LOCAL_HF_MODELS", "hf_models"))
 
-# Get the path to the downloaded model from the cache
-# This is the path where the snapshot_download function saves the model
-from huggingface_hub import snapshot_download
-WHISPER_MODEL_PATH = snapshot_download(
-    repo_id="openai/whisper-small",
-    allow_patterns=["*.bin"],
-    cache_dir=os.getenv("HF_HOME")
-)
-print(f"✅ Found Whisper model at: {WHISPER_MODEL_PATH}")
-
-# -----------------------------
-# Helper to load pipeline from local dir if present, else remote
-# This function is now only used for the summarizer model
+ 
+# Use faster-whisper model directly (small, medium, large, etc.)
+WHISPER_MODEL_PATH = "small"
 from transformers import pipeline
 def _load_pipeline(task: str, model_id: str, device=0 if DEVICE == "cuda" else -1, **kwargs):
     # If LOCAL_HF_MODELS/<model_id_name> exists, load from there
@@ -62,7 +52,7 @@ summarizer_model = _load_pipeline("summarization", SUMMARIZER_MODEL_ID, device=0
 # Load Faster Whisper model directly from the local path
 print(f"✅ Loading Faster Whisper model from local path...")
 # The WhisperModel constructor can take a local path directly
-whisper_model = WhisperModel(WHISPER_MODEL_PATH, device=DEVICE, compute_type="float16")
+whisper_model = whisper.load_model("medium", device=DEVICE)
 
 print("✅ Models loaded successfully.")
 
@@ -219,16 +209,16 @@ def transcribe_audio(verbose: bool = False) -> str:
         
         # Using Faster Whisper for transcription
         print("🚀 Starting Faster Whisper transcription...")
-        segments, info = whisper_model.transcribe(str(audio_path), beam_size=5, language="en", vad_filter=True)
+        result = whisper_model.transcribe(str(audio_path), language="en")
         
         full_text = ""
-        for segment in segments:
-            full_text += segment.text + " "
+        for segment in result["segments"]:
+            full_text += segment["text"] + " "
         
         text = full_text.strip()
         
         if verbose:
-            print(f"📄 Transcription language: {info.language}")
+            print(f"📄 Transcription language: en")
             print(f"📄 Transcription length: {len(text)} characters")
             print(f"📄 Transcription preview: {text[:200]}...")
 
@@ -371,7 +361,7 @@ def translate_text(text: str, src_lang: str, tgt_lang: str) -> str:
 
 # -----------------------------
 # Summarization flow (IMPROVED)
-def summarize_pipeline(transcript: str, target_language: str = "en", video_url: str = None) -> Tuple[str, str]:
+def summarize_pipeline(transcript: str, target_language: str = "en", video_url: str = None, device: str = "cpu") -> Tuple[str, str]:
     """
     Returns (english_summary, final_summary_in_target_lang)
     """

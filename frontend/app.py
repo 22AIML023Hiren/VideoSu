@@ -126,7 +126,7 @@ st.markdown("<p class='sub-title'>Upload a video or paste a YouTube URL and get 
 # ----------------------------
 # Backend Connection
 # ----------------------------
-api_base = st.text_input("Backend URL", value="http://127.0.0.1:5000").strip()
+api_base = st.text_input("Backend URL", value="http://localhost:5000").strip()
 
 try:
     health_response = requests.get(f"{api_base}/health", timeout=5)

@@ -112,6 +112,13 @@ def batch_summarize():
             "status": "success",
             "processed_count": len(results),
             "results": results
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Batch processing failed: {str(e)}", "status": "error"}), 500
+        "status": "healthy",
+        "message": "Backend is running",
+        "models_loaded": True
     })
 
 def format_duration(seconds):
