@@ -77,6 +77,31 @@ def detect_language(text: str) -> str:
     except Exception:
         return "en"
 
+def convert_numbers_to_local(text: str, target_lang: str) -> str:
+    """Convert English numbers to target language numerals"""
+    number_map = {
+        'en': {'0': '0', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9'},
+        'hi': {'0': '०', '1': '१', '2': '२', '3': '३', '4': '४', '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'},
+        'gu': {'0': '૦', '1': '૧', '2': '૨', '3': '૩', '4': '૪', '5': '૫', '6': '૬', '7': '૭', '8': '૮', '9': '૯'},
+        'bn': {'0': '০', '1': '১', '2': '২', '3': '৩', '4': '৪', '5': '৫', '6': '৬', '7': '৭', '8': '৮', '9': '৯'},
+        'ta': {'0': '௦', '1': '௧', '2': '௨', '3': '௩', '4': '௪', '5': '௫', '6': '௬', '7': '௭', '8': '௮', '9': '௯'},
+        'te': {'0': '౦', '1': '౧', '2': '౨', '3': '౩', '4': '౪', '5': '౫', '6': '౬', '7': '౭', '8': '౮', '9': '౯'},
+        'ml': {'0': '൦', '1': '൧', '2': '൨', '3': '൩', '4': '൪', '5': '൫', '6': '൬', '7': '൭', '8': '൮', '9': '൯'},
+        'kn': {'0': '೦', '1': '೧', '2': '೨', '3': '೩', '4': '೪', '5': '೫', '6': '೬', '7': '೭', '8': '೮', '9': '೯'},
+        'mr': {'0': '०', '1': '१', '2': '२', '3': '३', '4': '४', '5': '५', '6': '६', '7': '७', '8': '८', '9': '९'},
+        'pa': {'0': '੦', '1': '੧', '2': '੨', '3': '੩', '4': '੪', '5': '੫', '6': '੬', '7': '੭', '8': '੮', '9': '੯'},
+        'or': {'0': '୦', '1': '୧', '2': '୨', '3': '୩', '4': '୪', '5': '୫', '6': '୬', '7': '୭', '8': '୮', '9': '୯'},
+    }
+    
+    # Default to English if language not supported
+    mapping = number_map.get(target_lang, number_map['en'])
+    
+    converted_text = ''
+    for char in text:
+        converted_text += mapping.get(char, char)
+    
+    return converted_text
+
 # -----------------------------
 # YouTube → WAV
 def download_youtube_audio(url: str) -> str:
@@ -378,11 +403,25 @@ def translate_text(text: str, src_lang: str, tgt_lang: str) -> str:
     """
     try:
         print(f"🌐 Translating: {src_lang} → {tgt_lang} ({len(text)} chars)")
-        return _bhashini_translate(text, src_lang, tgt_lang)
+        translated_text = _bhashini_translate(text, src_lang, tgt_lang)
+        
+        # Convert numbers to target language numerals
+        if tgt_lang != "en":
+            translated_text = convert_numbers_to_local(translated_text, tgt_lang)
+            
+        return translated_text
+        
     except Exception as e:
         print(f"⚠️ Bhashini translation failed: {e}. Falling back to GoogleTranslator.")
         try:
-            return GoogleTranslator(source=src_lang, target=tgt_lang).translate(text)
+            translated_text = GoogleTranslator(source=src_lang, target=tgt_lang).translate(text)
+            
+            # Convert numbers to target language numerals
+            if tgt_lang != "en":
+                translated_text = convert_numbers_to_local(translated_text, tgt_lang)
+                
+            return translated_text
+            
         except Exception as ge:
             print(f"❌ GoogleTranslator failed: {ge}. Returning original text.")
             return text
@@ -422,7 +461,7 @@ def summarize_pipeline(transcript: str, target_language: str = "en", video_url: 
     # 1) Normalize to English for best summarization quality
     if src_lang != "en":
         print("🔁 Translating transcript → English for summarization...")
-        txt = translate_text(ttxt, src_lang, "en")
+        txt = translate_text(txt, src_lang, "en")
         print(f"✅ Translated transcript length: {len(txt)} characters")
 
     # 2) Summarize in English with better chunking
