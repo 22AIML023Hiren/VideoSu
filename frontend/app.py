@@ -4,6 +4,7 @@ import requests
 import base64
 import re
 import time
+import json
 
 # ----------------------------
 # Config & Language Options
@@ -19,6 +20,12 @@ LANGUAGES = {
     "Marathi": "mr",
     "English": "en",
 }
+
+# Initialize session state
+if 'result' not in st.session_state:
+    st.session_state.result = None
+if 'api_base' not in st.session_state:
+    st.session_state.api_base = "http://localhost:5000"
 
 st.set_page_config(page_title="🎥 Video Summarizer", layout="wide")
 
@@ -216,10 +223,196 @@ st.markdown(
         background: #3498db !important;
         color: #ffffff !important;
     }
+    
+    /* ---------------- Dashboard specific styles ---------------- */
+    .metric-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 15px;
+        border-radius: 10px;
+        border-left: 4px solid #3498db;
+        margin: 10px 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
     </style>
     """,
     unsafe_allow_html=True
 )
+
+# ----------------------------
+# Dashboard Functions
+# ----------------------------
+def show_confidence_metrics():
+    """Display confidence metrics in the dashboard"""
+    st.markdown("### 🤖 Confidence Metrics")
+    
+    try:
+        # Get confidence metrics from backend
+        response = requests.post(
+            f"{st.session_state.api_base}/confidence_metrics",
+            json={"transcript": st.session_state.result.get("transcript", "")},
+            timeout=10
+        )
+        
+        if response.status_code == 200:
+            metrics = response.json()
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.markdown(f"""
+                    <div class="metric-card">
+                        <h4>Word Count</h4>
+                        <h2>{metrics.get("word_count", 0)}</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col2:
+                st.markdown(f"""
+                    <div class="metric-card">
+                        <h4>Unique Words</h4>
+                        <h2>{metrics.get("unique_words", 0)}</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col3:
+                st.markdown(f"""
+                    <div class="metric-card">
+                        <h4>Lexical Diversity</h4>
+                        <h2>{metrics.get('lexical_diversity', 0) * 100:.1f}%</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            with col4:
+                st.markdown(f"""
+                    <div class="metric-card">
+                        <h4>Confidence Score</h4>
+                        <h2>{metrics.get('confidence_score', 0) * 100:.1f}%</h2>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Audio quality gauge
+            audio_quality = metrics.get("audio_quality", 0.5)
+            st.markdown("#### Audio Quality Score")
+            st.progress(audio_quality, text=f"{audio_quality * 100:.1f}%")
+            
+        else:
+            st.warning("Could not fetch confidence metrics")
+            
+    except Exception as e:
+        st.error(f"Error fetching metrics: {str(e)}")
+
+def show_processing_stats():
+    """Display processing statistics"""
+    st.markdown("### ⚡ Processing Statistics")
+    
+    processing_times = st.session_state.result.get("metrics", {}).get("processing_times", {})
+    
+    if processing_times:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Time per Processing Step:")
+            for step, time_val in processing_times.items():
+                if step != "total":
+                    step_name = step.replace('_', ' ').title()
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <h4>{step_name}</h4>
+                            <h3>{time_val}s</h3>
+                        </div>
+                    """, unsafe_allow_html=True)
+        
+        with col2:
+            # Create a simple bar chart
+            steps = [step.replace('_', ' ').title() for step in processing_times.keys() if step != "total"]
+            times = [processing_times[step] for step in processing_times if step != "total"]
+            
+            if steps and times:
+                chart_data = {"Processing Step": steps, "Time (seconds)": times}
+                st.bar_chart(chart_data, x="Processing Step", y="Time (seconds)")
+    else:
+        st.info("No processing time data available")
+
+def show_user_feedback():
+    """Display user feedback section"""
+    st.markdown("### 💬 User Feedback")
+    
+    # Feedback form
+    summary_id = st.session_state.result.get("summary_id", "")
+    
+    with st.form("feedback_form"):
+        st.write("Rate this summary quality:")
+        rating = st.slider("Rating", 1, 5, 4, help="1 = Poor, 5 = Excellent")
+        feedback = st.text_area("Additional feedback (optional)", placeholder="What did you like or what can be improved?")
+        
+        if st.form_submit_button("Submit Feedback"):
+            try:
+                response = requests.post(
+                    f"{st.session_state.api_base}/submit_feedback",
+                    json={
+                        "rating": rating,
+                        "feedback": feedback,
+                        "summary_id": summary_id
+                    },
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    st.success("✅ Thank you for your feedback!")
+                else:
+                    st.error("Failed to submit feedback")
+                    
+            except Exception as e:
+                st.error(f"Error submitting feedback: {str(e)}")
+    
+    # Show feedback statistics if available
+    try:
+        response = requests.get(f"{st.session_state.api_base}/get_feedback_stats", timeout=5)
+        if response.status_code == 200:
+            stats = response.json()
+            if stats["total_feedback"] > 0:
+                st.markdown("---")
+                st.markdown("#### 📊 Community Feedback Statistics")
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <h4>Total Feedback</h4>
+                            <h2>{stats["total_feedback"]}</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown(f"""
+                        <div class="metric-card">
+                            <h4>Average Rating</h4>
+                            <h2>{stats["average_rating"]}/5</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+    except:
+        pass  # Silently fail if feedback stats aren't available
+
+def show_dashboard_tab():
+    """Main dashboard tab content"""
+    st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+    st.markdown("<div class='section-header'>📊 Analytics Dashboard</div>", unsafe_allow_html=True)
+    
+    if st.session_state.result:
+        tab1, tab2, tab3 = st.tabs(["Confidence Metrics", "Processing Stats", "User Feedback"])
+        
+        with tab1:
+            show_confidence_metrics()
+        
+        with tab2:
+            show_processing_stats()
+        
+        with tab3:
+            show_user_feedback()
+    else:
+        st.info("Process a video first to see analytics dashboard")
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------------------
 # Header Section
@@ -236,7 +429,7 @@ st.markdown("""
 # Feature Cards Section
 # ----------------------------
 st.markdown("### 🚀 Powerful Features for Video Analysis")
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
     st.markdown("""
@@ -265,6 +458,15 @@ with col3:
         </div>
     """, unsafe_allow_html=True)
 
+with col4:
+    st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Analytics Dashboard</h3>
+            <p>Get detailed metrics and confidence scores for your summaries</p>
+        </div>
+    """, unsafe_allow_html=True)
+
 # ----------------------------
 # Backend Connection
 # ----------------------------
@@ -273,7 +475,8 @@ st.markdown("<div class='section-header'>🔗 Backend Connection</div>", unsafe_
 
 col1, col2 = st.columns([3, 1])
 with col1:
-    api_base = st.text_input("Backend URL", value="http://localhost:5000", help="Enter your backend server URL")
+    api_base = st.text_input("Backend URL", value=st.session_state.api_base, help="Enter your backend server URL")
+    st.session_state.api_base = api_base
 
 with col2:
     st.write("")  # Spacer
@@ -364,20 +567,21 @@ if st.button("🚀 Generate Summary", type="primary", use_container_width=True):
                 if input_method == "Upload Video":
                     files = {"file": video_file}
                     data = {"language": lang_code}
-                    response = requests.post(f"{api_base}/summarize", data=data, files=files, timeout=600)
+                    response = requests.post(f"{st.session_state.api_base}/summarize", data=data, files=files, timeout=600)
                 else:
                     files = {}
                     data = {"url": video_url, "language": lang_code}
-                    response = requests.post(f"{api_base}/summarize", data=data, files=files, timeout=600)
+                    response = requests.post(f"{st.session_state.api_base}/summarize", data=data, files=files, timeout=600)
 
                 progress_bar.progress(100)
                 result = response.json()
 
                 if response.status_code == 200:
+                    st.session_state.result = result
                     st.success("✅ Summary generated successfully!")
                     
                     # Display results in tabs for better organization
-                    tab1, tab2, tab3, tab4 = st.tabs(["📄 Summary", "🌐 English Summary", "🔊 Audio", "📊 Details"])
+                    tab1, tab2, tab3, tab4, tab5 = st.tabs(["📄 Summary", "🌐 English Summary", "🔊 Audio", "📊 Details", "📈 Dashboard"])
                     
                     with tab1:
                         st.markdown("<div class='section-card'>", unsafe_allow_html=True)
@@ -437,6 +641,9 @@ if st.button("🚀 Generate Summary", type="primary", use_container_width=True):
                                 st.write(f"**Processing Time:** {metrics.get('processing_time', '—')} seconds")
                         
                         st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    with tab5:
+                        show_dashboard_tab()
 
                 else:
                     st.error(f"❌ Error: {result.get('error', 'Unknown error')}")
@@ -447,6 +654,11 @@ if st.button("🚀 Generate Summary", type="primary", use_container_width=True):
                 st.error("❌ Connection error. Please check your internet connection and backend server.")
             except Exception as e:
                 st.error(f"❌ Exception: {e}")
+
+# Show dashboard tab if we already have results
+if st.session_state.result:
+    st.markdown("---")
+    show_dashboard_tab()
 
 # ----------------------------
 # Info Section
@@ -472,6 +684,7 @@ with st.expander("ℹ️ About This Tool", expanded=False):
         - Automatic transcription with Whisper AI
         - Multi-language summarization
         - Text-to-speech audio generation
+        - Analytics dashboard with confidence metrics
         """)
     
     with col_info2:
