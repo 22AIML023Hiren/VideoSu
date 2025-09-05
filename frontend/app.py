@@ -3,8 +3,7 @@ import streamlit as st
 import requests
 import base64
 import re
-from PIL import Image
-import io
+import time
 
 # ----------------------------
 # Config & Language Options
@@ -21,11 +20,7 @@ LANGUAGES = {
     "English": "en",
 }
 
-st.set_page_config(
-    page_title="🎥 Video Summarizer", 
-    layout="wide",
-    page_icon="🎥"
-)
+st.set_page_config(page_title="🎥 Video Summarizer", layout="wide")
 
 # ----------------------------
 # Custom CSS Styling
@@ -34,37 +29,49 @@ st.markdown(
     """
     <style>
     /* ---------------- Background ---------------- */
-    body, .stApp {
-        background: linear-gradient(135deg, #eef5fb 0%, #f9f9f9 100%);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    .stApp {
+        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+        color: #ffffff;
+    }
+    
+    /* Main content area */
+    .main .block-container {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 25px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     /* ---------------- Header Section ---------------- */
     .header-container {
-        background: linear-gradient(90deg, #2c3e50 0%, #4ca1af 100%);
-        padding: 20px;
+        background: linear-gradient(135deg, #1a2a3a 0%, #2d4a5f 100%);
+        padding: 25px;
         border-radius: 12px;
         margin-bottom: 25px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
         text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(76, 161, 175, 0.3);
     }
     .main-title {
         font-size: 2.8rem !important;
         font-weight: 800 !important;
         color: white;
         margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
     .sub-title {
         font-size: 1.4rem;
-        color: #f8f9fa;
+        color: #cce7ff;
         margin-bottom: 5px;
-        font-weight: 300;
+        font-weight: 400;
     }
     .tagline {
-        font-size: 1.1rem;
-        color: #d6eaff;
+        font-size: 1.3rem;
+        color: #4ca1af;
+        font-weight: 500;
+        margin-top: 15px;
         font-style: italic;
-        margin-top: 10px;
     }
 
     /* ---------------- Input widgets ---------------- */
@@ -72,70 +79,72 @@ st.markdown(
     .stRadio > div,
     .stFileUploader > div > div,
     .stTextArea > div > textarea {
-        background-color: #ffffff !important;
-        color: #2c3e50 !important;
+        background-color: rgba(213, 245, 227, 0.1) !important;
+        color: #ffffff !important;
         border: 2px solid #4ca1af !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         font-weight: 500 !important;
-        padding: 10px !important;
+        padding: 12px !important;
     }
 
     /* Backend URL input special styling */
     div[data-baseweb="input"] > div {
-        background-color: #ffffff !important;
+        background-color: rgba(209, 242, 235, 0.1) !important;
         border: 2px solid #4ca1af !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input {
-        color: #154360 !important;
+        color: #ffffff !important;
     }
 
     /* ---------------- Fix Selectbox Visibility ---------------- */
     div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: #2c3e50 !important;
+        background-color: rgba(213, 245, 227, 0.1) !important;
+        color: #ffffff !important;
         font-weight: 500 !important;
-        border-radius: 8px !important;
+        border-radius: 10px !important;
         border: 2px solid #4ca1af !important;
     }
     div[data-baseweb="select"] span {
-        color: #2c3e50 !important;
+        color: #ffffff !important;
         font-weight: 500 !important;
     }
 
     /* ---------------- Buttons ---------------- */
     .stButton > button {
-        background: linear-gradient(90deg, #45b39d 0%, #52c5b8 100%) !important;
+        background: linear-gradient(135deg, #45b39d 0%, #52c5b8 100%) !important;
         color: white !important;
-        border-radius: 8px !important;
-        padding: 0.7em 1.8em !important;
+        border-radius: 10px !important;
+        padding: 0.8em 2em !important;
         font-weight: bold !important;
         border: none !important;
         transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(69, 179, 157, 0.3);
     }
     .stButton > button:hover {
-        background: linear-gradient(90deg, #1abc9c 0%, #2dd4bf 100%) !important;
+        background: linear-gradient(135deg, #1abc9c 0%, #2dd4bf 100%) !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 12px rgba(26, 188, 156, 0.4) !important;
+        box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4) !important;
     }
 
     /* ---------------- Section cards ---------------- */
     .section-card {
-        background-color: #ffffff;
-        padding: 20px;
+        background: rgba(255, 255, 255, 0.08);
+        padding: 25px;
         border-radius: 12px;
-        box-shadow: 0px 3px 15px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-        border-left: 5px solid #4ca1af;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        margin-bottom: 25px;
+        border: 1px solid rgba(76, 161, 175, 0.3);
+        backdrop-filter: blur(10px);
     }
     .section-header {
-        font-size: 1.2rem;
+        font-size: 1.3rem;
         font-weight: 600;
-        color: #2c3e50;
+        color: #4ca1af;
         margin-bottom: 15px;
-        padding-bottom: 8px;
-        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(76, 161, 175, 0.3);
     }
     
     /* ---------------- Progress Bar ---------------- */
@@ -143,12 +152,41 @@ st.markdown(
         background: linear-gradient(90deg, #4ca1af 0%, #45b39d 100%) !important;
     }
     
-    /* ---------------- Video Preview Container ---------------- */
-    .video-preview {
-        max-height: 300px;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    /* ---------------- Text colors ---------------- */
+    .stMarkdown {
+        color: #ffffff;
+    }
+    
+    /* ---------------- Success/Error messages ---------------- */
+    .stSuccess {
+        background-color: rgba(69, 179, 157, 0.2) !important;
+        border: 1px solid #45b39d !important;
+    }
+    .stError {
+        background-color: rgba(231, 76, 60, 0.2) !important;
+        border: 1px solid #e74c3c !important;
+    }
+    
+    /* ---------------- Expander ---------------- */
+    .streamlit-expanderHeader {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border-radius: 8px !important;
+        color: #ffffff !important;
+    }
+    
+    /* ---------------- Tabs ---------------- */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 8px 8px 0 0;
+        padding: 12px 20px;
+        color: #ffffff;
+    }
+    .stTabs [aria-selected="true"] {
+        background: rgba(76, 161, 175, 0.3) !important;
+        color: #ffffff !important;
     }
     </style>
     """,
@@ -161,8 +199,8 @@ st.markdown(
 st.markdown("""
     <div class="header-container">
         <h1 class="main-title">🎥 Textual Summarization of Videos in Indic Languages</h1>
-        <p class="sub-title">From hours to minutes: bridging video and language with intelligent summarization</p>
-        <p class="tagline">Upload a video or paste a YouTube URL and get concise summaries with audio output</p>
+        <p class="sub-title">Upload a video or paste a YouTube URL and get concise summaries with audio output</p>
+        <p class="tagline">From hours to minutes: bridging video and language with intelligent summarization</p>
     </div>
 """, unsafe_allow_html=True)
 
