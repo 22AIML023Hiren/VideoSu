@@ -23,155 +23,182 @@ LANGUAGES = {
 st.set_page_config(page_title="🎥 Video Summarizer", layout="wide")
 
 # ----------------------------
-# Custom CSS Styling
+# Custom CSS Styling - IMPROVED FOR VISIBILITY
 # ----------------------------
 st.markdown(
     """
     <style>
     /* ---------------- Background ---------------- */
     .stApp {
-        background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-        color: #ffffff;
-    }
-    
-    /* Main content area */
-    .main .block-container {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 12px;
-        padding: 25px;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     /* ---------------- Header Section ---------------- */
     .header-container {
-        background: linear-gradient(135deg, #1a2a3a 0%, #2d4a5f 100%);
-        padding: 25px;
-        border-radius: 12px;
-        margin-bottom: 25px;
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
         text-align: center;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(76, 161, 175, 0.3);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        color: white;
     }
     .main-title {
         font-size: 2.8rem !important;
         font-weight: 800 !important;
         color: white;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
     }
     .sub-title {
         font-size: 1.4rem;
-        color: #cce7ff;
-        margin-bottom: 5px;
+        color: #ecf0f1;
+        margin-bottom: 10px;
         font-weight: 400;
     }
     .tagline {
         font-size: 1.3rem;
-        color: #4ca1af;
+        color: #ecf0f1;
         font-weight: 500;
-        margin-top: 15px;
+        margin-top: 20px;
         font-style: italic;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 10px 20px;
+        border-radius: 25px;
+        display: inline-block;
     }
 
     /* ---------------- Input widgets ---------------- */
     .stTextInput > div > div > input,
-    .stRadio > div,
-    .stFileUploader > div > div,
     .stTextArea > div > textarea {
-        background-color: rgba(213, 245, 227, 0.1) !important;
-        color: #ffffff !important;
-        border: 2px solid #4ca1af !important;
+        background-color: #ffffff !important;
+        color: #2c3e50 !important;
+        border: 2px solid #3498db !important;
         border-radius: 10px !important;
         font-weight: 500 !important;
         padding: 12px !important;
     }
 
+    .stRadio > div {
+        background-color: #ffffff !important;
+        border: 2px solid #3498db !important;
+        border-radius: 10px !important;
+        padding: 15px !important;
+    }
+
+    .stFileUploader > div > div {
+        background-color: #ffffff !important;
+        border: 2px dashed #3498db !important;
+        border-radius: 10px !important;
+        padding: 20px !important;
+    }
+
     /* Backend URL input special styling */
     div[data-baseweb="input"] > div {
-        background-color: rgba(209, 242, 235, 0.1) !important;
-        border: 2px solid #4ca1af !important;
+        background-color: #ffffff !important;
+        border: 2px solid #3498db !important;
         border-radius: 10px !important;
         font-weight: 500 !important;
     }
     div[data-baseweb="input"] input {
-        color: #ffffff !important;
+        color: #2c3e50 !important;
     }
 
     /* ---------------- Fix Selectbox Visibility ---------------- */
     div[data-baseweb="select"] > div {
-        background-color: rgba(213, 245, 227, 0.1) !important;
-        color: #ffffff !important;
+        background-color: #ffffff !important;
+        color: #2c3e50 !important;
         font-weight: 500 !important;
         border-radius: 10px !important;
-        border: 2px solid #4ca1af !important;
+        border: 2px solid #3498db !important;
     }
     div[data-baseweb="select"] span {
-        color: #ffffff !important;
+        color: #2c3e50 !important;
         font-weight: 500 !important;
     }
 
     /* ---------------- Buttons ---------------- */
     .stButton > button {
-        background: linear-gradient(135deg, #45b39d 0%, #52c5b8 100%) !important;
+        background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%) !important;
         color: white !important;
         border-radius: 10px !important;
         padding: 0.8em 2em !important;
         font-weight: bold !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 15px rgba(69, 179, 157, 0.3);
+        box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
+        font-size: 1.1rem;
     }
     .stButton > button:hover {
-        background: linear-gradient(135deg, #1abc9c 0%, #2dd4bf 100%) !important;
+        background: linear-gradient(135deg, #229954 0%, #27ae60 100%) !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(26, 188, 156, 0.4) !important;
+        box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4) !important;
     }
 
     /* ---------------- Section cards ---------------- */
     .section-card {
-        background: rgba(255, 255, 255, 0.08);
+        background: #ffffff;
         padding: 25px;
-        border-radius: 12px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border-radius: 15px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
         margin-bottom: 25px;
-        border: 1px solid rgba(76, 161, 175, 0.3);
-        backdrop-filter: blur(10px);
+        border-left: 5px solid #3498db;
     }
     .section-header {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         font-weight: 600;
-        color: #4ca1af;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid rgba(76, 161, 175, 0.3);
+        color: #2c3e50;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #ecf0f1;
     }
     
     /* ---------------- Progress Bar ---------------- */
     .stProgress > div > div > div {
-        background: linear-gradient(90deg, #4ca1af 0%, #45b39d 100%) !important;
+        background: linear-gradient(90deg, #3498db 0%, #2980b9 100%) !important;
     }
     
-    /* ---------------- Text colors ---------------- */
-    .stMarkdown {
-        color: #ffffff;
+    /* ---------------- Feature Cards ---------------- */
+    .feature-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin: 10px;
+        border: 1px solid #e9ecef;
+        transition: transform 0.3s ease;
+    }
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+    .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 15px;
+        color: #3498db;
     }
     
     /* ---------------- Success/Error messages ---------------- */
     .stSuccess {
-        background-color: rgba(69, 179, 157, 0.2) !important;
-        border: 1px solid #45b39d !important;
+        background-color: rgba(46, 204, 113, 0.2) !important;
+        border: 1px solid #27ae60 !important;
+        color: #27ae60 !important;
     }
     .stError {
         background-color: rgba(231, 76, 60, 0.2) !important;
         border: 1px solid #e74c3c !important;
+        color: #e74c3c !important;
     }
     
     /* ---------------- Expander ---------------- */
     .streamlit-expanderHeader {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-radius: 8px !important;
-        color: #ffffff !important;
+        background: #ffffff !important;
+        border-radius: 10px !important;
+        color: #2c3e50 !important;
+        font-weight: 600 !important;
+        border: 2px solid #3498db !important;
+        margin-bottom: 10px;
     }
     
     /* ---------------- Tabs ---------------- */
@@ -179,13 +206,14 @@ st.markdown(
         gap: 8px;
     }
     .stTabs [data-baseweb="tab"] {
-        background: rgba(255, 255, 255, 0.05);
-        border-radius: 8px 8px 0 0;
+        background: #ecf0f1;
+        border-radius: 10px 10px 0 0;
         padding: 12px 20px;
-        color: #ffffff;
+        color: #2c3e50;
+        font-weight: 500;
     }
     .stTabs [aria-selected="true"] {
-        background: rgba(76, 161, 175, 0.3) !important;
+        background: #3498db !important;
         color: #ffffff !important;
     }
     </style>
@@ -205,11 +233,47 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------
+# Feature Cards Section
+# ----------------------------
+st.markdown("### 🚀 Powerful Features for Video Analysis")
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <h3>Multi-Language Support</h3>
+            <p>Summarize videos in 9+ Indic languages with accurate translations</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">🔊</div>
+            <h3>Audio Output</h3>
+            <p>Listen to your summaries with natural text-to-speech technology</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+    st.markdown("""
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Fast Processing</h3>
+            <p>Get results quickly with our optimized AI pipeline</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# ----------------------------
 # Backend Connection
 # ----------------------------
+st.markdown("<div class='section-card'>", unsafe_allow_html=True)
+st.markdown("<div class='section-header'>🔗 Backend Connection</div>", unsafe_allow_html=True)
+
 col1, col2 = st.columns([3, 1])
 with col1:
-    api_base = st.text_input("Backend URL", value="http://localhost:5000").strip()
+    api_base = st.text_input("Backend URL", value="http://localhost:5000", help="Enter your backend server URL")
 
 with col2:
     st.write("")  # Spacer
@@ -232,6 +296,8 @@ with col2:
             st.error("❌ Cannot connect to backend. Please check the URL.")
         except Exception as e:
             st.error(f"❌ Health check failed: {e}")
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # ----------------------------
 # Input Section
